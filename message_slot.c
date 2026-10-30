@@ -1,9 +1,8 @@
 #undef __KERNEL__
-#define __KERNEL__ //קוד קרנל
+#define __KERNEL__ 
 #undef MODULE
-#define MODULE //קוד של מודול שנטען לקרנל
+#define MODULE 
 
-//ספריות שמאפשרות לקרוא לפונקציות מיוחדות
 #include <linux/kernel.h>   
 #include <linux/module.h>   
 #include <linux/fs.h>       
@@ -11,11 +10,11 @@
 #include <linux/string.h> 
 #include <linux/slab.h>
 
-MODULE_LICENSE("GPL"); //רישיון
+MODULE_LICENSE("GPL"); 
 #include "message_slot.h"
-channel_list devices_data[257]; //כל תא מייצג קובץ התקן שונה
+channel_list devices_data[257]; 
 
-//פונקצית הניקיון למניעת זליגות זיכרון בקרנל
+
 static int device_release(struct inode* inode, struct file*  file) {
 	printk("Invoking device_release(%p,%p)\n", inode, file);
 	kfree(file->private_data);
@@ -23,13 +22,13 @@ static int device_release(struct inode* inode, struct file*  file) {
 }
 
 static int device_open(struct inode* inode, struct file*  file) {
-	int minor = iminor(inode); //לאיזה minor number המשתמש מנסה להתחבר
+	int minor = iminor(inode); 
 	file_data *data;
 	printk("Invoking device_open(%p) minor num is: %d\n", file,minor);
-	data = kmalloc(sizeof(file_data), GFP_KERNEL); //הקצאת זיכרון דינאמית בקרנל
+	data = kmalloc(sizeof(file_data), GFP_KERNEL); 
 	if (data==NULL) {
 		printk("file data malloc failed device_open(%p)\n", file);
-		return -ENOMEM; //אין זיכרון
+		return -ENOMEM; 
 	}
 	data->minor_num = minor;
 	data->working_channel_id = 0;
@@ -38,7 +37,6 @@ static int device_open(struct inode* inode, struct file*  file) {
 	return SUCCESS;
 }
 
-//קריאת הודעה מהדרייבר
 static ssize_t device_read(struct file* file, char __user* buffer, size_t length, loff_t* offset) {
 	int i;
 	int message_size;
@@ -68,7 +66,7 @@ static ssize_t device_read(struct file* file, char __user* buffer, size_t length
 	return i;
 }
 
-//כתיבת הודעה לדרייבר
+
 static ssize_t device_write(struct file* file, const char __user* buffer, size_t length, loff_t* offset) {
 	int i,fail_flag=0;
 	char kbuffer[BUF_LEN];
@@ -98,7 +96,6 @@ static ssize_t device_write(struct file* file, const char __user* buffer, size_t
 	return i;
 }
 
-//ניהול הרשימה המקושרת של הערוצים עבור ה-Minor הנוכחי
 static long device_ioctl(struct file* file, unsigned int ioctl_command_id, unsigned long ioctl_param) {
 	file_data *data = (file_data*)(file->private_data);
 	channel *head = devices_data[data->minor_num].head;
@@ -169,7 +166,6 @@ struct file_operations Fops =
 	.release = device_release,
  };
 
-//אתחול המודול
 static int __init simple_init(void)
 {
 	int rc = -1;
@@ -177,7 +173,6 @@ static int __init simple_init(void)
 	rc = register_chrdev(MAJOR_NUM, DEVICE_RANGE_NAME, &Fops);
 	if (rc < 0)
 	{
-		//ערך שלילי זו שגיאה
 		printk(KERN_ERR "%s registraion failed for  %d\n",DEVICE_RANGE_NAME, MAJOR_NUM);
 		return rc;
 	}
@@ -188,7 +183,6 @@ static int __init simple_init(void)
 	return SUCCESS;
 }
 
-//מחיקת המודול
 static void __exit simple_cleanup(void)
 {
 	channel *head;
